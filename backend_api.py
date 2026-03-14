@@ -1,5 +1,5 @@
 from fastapi import FastAPI, UploadFile, File
-import tempfile
+import shutil
 import os
 
 from predict_raga import predict_raga
@@ -7,19 +7,38 @@ from predict_raga import predict_raga
 app = FastAPI()
 
 
-@app.post("/predict")
+# Home route (so / does not show "Not Found")
+@app.get("/")
+def home():
+    return {"message": "Swaratma API running"}
 
+
+# Prediction endpoint
+@app.post("/predict")
 async def predict(file: UploadFile = File(...)):
 
-    with tempfile.NamedTemporaryFile(delete=False) as tmp:
+    # Create temporary audio file
+    temp_file = "temp_audio.wav"
 
-        tmp.write(await file.read())
+    with open(temp_file, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
 
-        temp_path = tmp.name
+    try:
+        # Run ML model
+        result = predict_raga(temp_file)
 
+        return result
 
-    result = predict_raga(temp_path)
+    except Exception as e:
 
-    os.remove(temp_path)
+        return {
+            "raga": "Error",
+            "arohanam": "",
+            "avarohanam": "",
+            "message": str(e)
+        }
 
-    return result
+    finally:
+        # Delete temporary file
+        if os.path.exists(temp_file):
+            os.remove(temp_file)
