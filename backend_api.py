@@ -10,7 +10,7 @@ app = FastAPI()
 # Home route (so / does not show "Not Found")
 @app.get("/")
 def home():
-    return {"message": "Swaratma API running"}
+    return {"status": "Swaratma API running"}
 
 
 # Prediction endpoint
